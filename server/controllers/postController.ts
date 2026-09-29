@@ -1,7 +1,6 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddlewares.js";
 import { GoogleGenAI } from "@google/genai";
-import { cloudinary } from "../config/cloudinary.js";
 import axios from "axios";
 import { Generation } from "../models/Generation.js"; // Aapka Generation model import
 import { Post } from "../models/Post.js";

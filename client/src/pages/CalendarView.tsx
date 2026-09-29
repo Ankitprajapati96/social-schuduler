@@ -58,6 +58,8 @@ const CalendarView: React.FC = () => {
     daysArray.push(new Date(year, month, d));
   }
 
+  const today = new Date();
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -106,17 +108,29 @@ const CalendarView: React.FC = () => {
               return <div key={`empty-${index}`} className="bg-slate-50/50 min-h-[120px]" />;
             }
 
-            const dateString = dateObj.toISOString().split("T")[0];
+            const cellYear = dateObj.getFullYear();
+            const cellMonth = dateObj.getMonth();
+            const cellDay = dateObj.getDate();
+
+            // Scheduled aur Published dono posts match hongi local calendar date ke sath
             const dayPosts = posts.filter((p) => {
               if (!p.scheduledFor) return false;
-              return p.scheduledFor.split("T")[0] === dateString;
+              const postDate = new Date(p.scheduledFor);
+              return (
+                postDate.getFullYear() === cellYear &&
+                postDate.getMonth() === cellMonth &&
+                postDate.getDate() === cellDay
+              );
             });
 
-            const isToday = new Date().toISOString().split("T")[0] === dateString;
+            const isToday =
+              today.getFullYear() === cellYear &&
+              today.getMonth() === cellMonth &&
+              today.getDate() === cellDay;
 
             return (
               <div
-                key={dateString}
+                key={`${cellYear}-${cellMonth}-${cellDay}`}
                 className={`bg-white min-h-[120px] p-2 flex flex-col transition-colors hover:bg-slate-50/80 ${
                   isToday ? "bg-indigo-50/20" : ""
                 }`}
