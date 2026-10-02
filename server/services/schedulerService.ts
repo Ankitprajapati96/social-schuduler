@@ -3,9 +3,16 @@ import { Post } from "../models/Post.js";
 import { Account } from "../models/Account.js";
 import { ActivityLog } from "../models/ActivityLog.js";
 import zernio from "../config/zernio.js";
+import { User } from "../models/User.js";
 
-// 1. Ek reusable function banaya jise Cron aur "Publish Now" dono use karenge
+// 1. Reusable function for publishing posts
 export const publishPostToZernio = async (post: any) => {
+  // Author ka profile check karo
+  const author = await User.findById(post.user);
+  if (!author?.zernioProfileId) {
+    throw new Error(`Author has no active Zernio profile for post ${post._id}`);
+  }
+
   const accounts = await Account.find({
     user: post.user,
     platform: { $in: post.platforms },
@@ -22,7 +29,9 @@ export const publishPostToZernio = async (post: any) => {
     accountId: acc.zernioAccountId!,
   }));
 
-  const payload = {
+  // ✅ FIX: profileId explicitly payload me bind kiya gaya hai
+  const payload: any = {
+    profileId: author.zernioProfileId,
     content: post.content,
     publishNow: true,
     ...(post.mediaUrl ? { mediaItems: [{ type: post.mediaType || "image", url: post.mediaUrl }] } : {}),
@@ -31,14 +40,17 @@ export const publishPostToZernio = async (post: any) => {
 
   console.log(`Publishing post ${post._id} to zernio with media: ${post.mediaUrl || "none"}`);
 
-const response = await zernio.posts.createPost({
+  const response = await zernio.posts.createPost({
     body: payload,
   });
 
   console.log("--> Full Zernio API Response:", JSON.stringify(response, null, 2));
 
-  // Zernio response object extraction (covers all possible SDK formats)
-  const publishedPost = (response as any)?.post?.post || (response as any)?.post || (response as any)?.data || response;
+  const publishedPost =
+    (response as any)?.post?.post ||
+    (response as any)?.post ||
+    (response as any)?.data ||
+    response;
 
   if (!publishedPost) {
     throw new Error("failed to get post object from zernio response");
@@ -71,6 +83,10 @@ export const initScheduler = () => {
 
       for (const post of postsToPublish) {
         try {
+          // Double-trigger lock
+          post.status = "processing";
+          await post.save();
+
           await publishPostToZernio(post);
         } catch (err: any) {
           console.error(`failed to publish post ${post._id}:`, err?.response?.data || err?.message);
