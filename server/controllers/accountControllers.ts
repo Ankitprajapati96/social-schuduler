@@ -35,7 +35,7 @@ export const addAccounts = async (req:AuthRequest, res: Response): Promise<void>
 
 export const disconnectAccounts = async (req:AuthRequest, res: Response): Promise<void> => {
     try {
-        const account = await Account.findone({_id: req.params.id, user: req.user._id})
+        const account = await Account.findOne({_id: req.params.id, user: req.user._id})
         if(!account){
             res.status(404).json({message: "Account not found"})
             return;
