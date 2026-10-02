@@ -6,6 +6,7 @@ import { Generation } from "../models/Generation.js"; // Aapka Generation model 
 import { Post } from "../models/Post.js";
 import imagekit from "../config/imagekit.js";
 import { publishPostToZernio } from "../services/schedulerService.js";
+import { Account } from "../models/Account.js";
 
 //Generate Post
 //POST /api/posts/generate
@@ -165,8 +166,33 @@ export const schedulePost = async (
         parsePlatforms = platforms.split(",");
       }
     }
-    let mediaUrl: string | undefined = req.body.mediaUrl;
-    let mediaType: "image" | "video" | undefined = req.body.mediaType;
+  
+
+
+    if (!parsePlatforms || parsePlatforms.length === 0) {
+      res.status(400).json({
+        message: "Kripya kam se kam ek social platform select karein.",
+      });
+      return;
+    }
+
+    // Check karo kya user ka selected account actually connected hai
+    const connectedAccounts = await Account.find({
+      user: req.user._id,
+      platform: { $in: parsePlatforms },
+      status: "connected",
+      zernioAccountId: { $exists: true },
+    });
+
+    if (connectedAccounts.length === 0) {
+      res.status(400).json({
+        message: "Chuna gaya account connected nahi hai. Pehle 'Accounts' page par jakar account connect karein.",
+      });
+      return;
+    }
+
+      let mediaUrl: string | undefined = req.body.mediaUrl;
+      let mediaType: "image" | "video" | undefined = req.body.mediaType;
 
     if (req.file) {
       try {
