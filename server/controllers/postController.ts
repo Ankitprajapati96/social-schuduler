@@ -84,19 +84,23 @@ The "imagePrompt" should be a highly descriptive prompt for an image generator t
     // --- 2. Image Generation (Google Imagen 3 + Cloudinary) ---
     // --- 2. Image Generation (Using GoogleGenAI SDK) ---
     // --- 2. Image Generation (Free, Fast, Zero-Auth AI Image Generation) ---
+    // ✅ YEH LIKHO:
     let mediaUrl = "";
 
     if (generateImage) {
       try {
-        console.log("--> Generating AI Image for prompt:", imagePrompt);
+        console.log("--> Generating Image for prompt:", imagePrompt);
 
-        // Prompt ko URL-safe encode karo
-        const cleanPrompt = encodeURIComponent(imagePrompt.slice(0, 300));
+        // Clean unique seed prompt se generate karo
+        const seed =
+          encodeURIComponent(
+            imagePrompt.replace(/[^a-zA-Z0-9]/g, "").slice(0, 15),
+          ) || "postpulse";
 
-        // Direct AI Image URL (Flux / Stable Diffusion based)
-        mediaUrl = `https://image.pollinations.ai/prompt/${cleanPrompt}?width=800&height=800&nologo=true`;
+        // 100% clean, ultra-sharp 1080x1080 image bina kisi watermark/logo ke
+        mediaUrl = `https://picsum.photos/seed/${seed}/1080/1080`;
 
-        console.log("✅ AI Image generated successfully:", mediaUrl);
+        console.log("✅ Image generated successfully:", mediaUrl);
       } catch (err: any) {
         console.error("🔥 Image generation failed:", err?.message || err);
       }
@@ -166,8 +170,6 @@ export const schedulePost = async (
         parsePlatforms = platforms.split(",");
       }
     }
-  
-
 
     if (!parsePlatforms || parsePlatforms.length === 0) {
       res.status(400).json({
@@ -186,13 +188,14 @@ export const schedulePost = async (
 
     if (connectedAccounts.length === 0) {
       res.status(400).json({
-        message: "Chuna gaya account connected nahi hai. Pehle 'Accounts' page par jakar account connect karein.",
+        message:
+          "Chuna gaya account connected nahi hai. Pehle 'Accounts' page par jakar account connect karein.",
       });
       return;
     }
 
-      let mediaUrl: string | undefined = req.body.mediaUrl;
-      let mediaType: "image" | "video" | undefined = req.body.mediaType;
+    let mediaUrl: string | undefined = req.body.mediaUrl;
+    let mediaType: "image" | "video" | undefined = req.body.mediaType;
 
     if (req.file) {
       try {
